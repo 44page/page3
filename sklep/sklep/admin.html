@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<title>Panel sklepu</title>
+<style>
+body{font:16px/1.4 system-ui,sans-serif;max-width:760px;margin:0 auto;padding:1rem;background:#f1f3f5;color:#111}
+input,textarea{font:inherit;padding:.5rem;border:1px solid #bbb;border-radius:6px;width:100%}
+label{display:block;font-size:.85rem;color:#555;margin-top:.6rem}
+.p{background:#fff;border-radius:10px;padding:1rem;margin:1rem 0;display:grid;grid-template-columns:120px 1fr;gap:1rem}
+.p img,.p .ph{width:120px;height:150px;object-fit:cover;background:#ddd;border-radius:8px}
+button{font:inherit;padding:.6rem 1rem;border-radius:8px;border:0;background:#2a3bff;color:#fff;cursor:pointer}
+button.g{background:#e0e3e7;color:#111}button.r{background:#c0262d}
+.bar{position:sticky;bottom:0;background:#f1f3f5;padding:.8rem 0;display:flex;gap:.6rem;align-items:center}
+.row{display:flex;gap:.6rem}#msg{font-weight:600}
+</style></head><body>
+<h1>Panel sklepu</h1>
+<div id="login" hidden><input id="pw"></div>
+<div id="app" hidden>
+  <label>Nazwa sklepu</label><input id="name"><label>Duży nagłówek na stronie głównej</label><input id="tag">
+  <div id="list"></div>
+  <div class="bar"><button class="g" onclick="add()">+ Dodaj produkt</button><button onclick="saveAll()">Zapisz zmiany</button><span id="msg"></span></div>
+</div>
+<script>
+let D,PW="";const $=s=>document.getElementById(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const H=()=>({"x-admin-password":PW});
+async function go(){
+  PW=$("pw").value;
+  D=await (await fetch("/api/products")).json();
+  $("login").hidden=true;$("app").hidden=false;render();
+}
+function render(){
+  $("name").value=D.name;$("tag").value=D.tagline;
+  $("list").innerHTML=D.products.map((p,i)=>`<div class="p"><div>${p.image?`<img src="${esc(p.image)}">`:'<div class="ph"></div>'}<input type="file" accept="image/*" onchange="up(${i},this)" style="margin-top:.5rem;font-size:.75rem"></div>
+  <div><label>Nazwa</label><input value="${esc(p.name)}" oninput="D.products[${i}].name=this.value">
+  <label>Opis</label><textarea rows="2" oninput="D.products[${i}].description=this.value">${esc(p.description)}</textarea>
+  <div class="row"><div><label>Cena (zł)</label><input type="number" step="0.01" min="0" value="${p.price}" oninput="D.products[${i}].price=+this.value"></div>
+  <label style="margin-top:1.8rem"><input type="checkbox" style="width:auto" ${p.soldOut?"checked":""} onchange="D.products[${i}].soldOut=this.checked"> Wyprzedane</label></div>
+  <p><button class="r" onclick="if(confirm('Usunąć?')){D.products.splice(${i},1);render()}">Usuń</button></p></div></div>`).join("");
+}
+function add(){D.products.push({id:"p"+Date.now().toString(36),name:"Nowy produkt",description:"",price:0,image:"",soldOut:false});render()}
+async function up(i,inp){
+  const f=inp.files[0];if(!f)return;
+  const im=await createImageBitmap(f),s=Math.min(1,1000/Math.max(im.width,im.height)),c=document.createElement("canvas");
+  c.width=im.width*s;c.height=im.height*s;c.getContext("2d").drawImage(im,0,0,c.width,c.height);
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",.82)),id=D.products[i].id;
+  const r=await fetch("/api/img/"+id,{method:"PUT",headers:H(),body:blob});
+  if(!r.ok){alert("Błąd wgrywania");return}
+  D.products[i].image="/api/img/"+id+"?v="+Date.now();render();
+}
+async function saveAll(){
+  D.name=$("name").value;D.tagline=$("tag").value;
+  const r=await fetch("/api/products",{method:"PUT",headers:H(),body:JSON.stringify(D)});
+  $("msg").textContent=r.ok?"Zapisano ✓":"Błąd zapisu";setTimeout(()=>$("msg").textContent="",3000);
+}
+go();
+</script></body></html>

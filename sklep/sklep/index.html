@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pl"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sklep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8ecef;--ink:#0f1720;--mut:#59656f;--line:#c9d1d8;--card:#fff;--acc:#2a3bff;--accI:#fff;--f:"Bricolage Grotesque",system-ui,sans-serif}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1318;--ink:#eef2f5;--mut:#92a0ab;--line:#26313a;--card:#161d24;--acc:#7b88ff;--accI:#0e1318}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.5 var(--f)}
+button{font:inherit;cursor:pointer}a{color:inherit}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:.9rem clamp(1rem,4vw,3rem);background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{font-weight:800;font-size:1.25rem;letter-spacing:-.02em}
+.cartbtn{border:2px solid var(--ink);background:none;color:var(--ink);border-radius:99px;padding:.4rem 1rem;font-weight:600}
+.cartbtn b{background:var(--acc);color:var(--accI);border-radius:99px;padding:0 .5rem;margin-left:.4rem}
+.hero{padding:clamp(3rem,10vw,8rem) clamp(1rem,4vw,3rem) clamp(2rem,5vw,4rem)}
+.hero h1{margin:0;font-weight:800;font-size:clamp(2.8rem,10vw,8.5rem);line-height:.92;letter-spacing:-.045em;max-width:14ch}
+.hero p{margin:1.5rem 0 0;color:var(--mut);font-size:1.15rem;max-width:40ch}
+.banner{margin:0 clamp(1rem,4vw,3rem);padding:1rem 1.2rem;background:var(--acc);color:var(--accI);border-radius:10px;font-weight:600}
+main{padding:0 clamp(1rem,4vw,3rem) 5rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:clamp(1rem,2.5vw,2rem)}
+.card{display:flex;flex-direction:column}
+.pic{position:relative;aspect-ratio:4/5;background:var(--line);border-radius:14px;overflow:hidden;display:grid;place-items:center}
+.pic img{width:100%;height:100%;object-fit:cover;transition:transform .5s}.card:hover .pic img{transform:scale(1.04)}
+.pic i{font:800 7rem var(--f);color:var(--mut);opacity:.5;font-style:normal}
+.tag{position:absolute;left:.8rem;top:.8rem;background:var(--ink);color:var(--bg);border-radius:99px;padding:.15rem .8rem;font-size:.85rem;font-weight:600}
+.meta{display:flex;justify-content:space-between;gap:1rem;margin:.9rem 0 .2rem;font-weight:600;font-size:1.1rem}
+.desc{color:var(--mut);margin:0 0 .9rem;flex:1;max-width:46ch}
+.add{border:0;background:var(--acc);color:var(--accI);border-radius:10px;padding:.8rem;font-weight:600}
+.add:disabled{background:none;color:var(--mut);border:1px solid var(--line);cursor:default}
+.empty{color:var(--mut);font-size:1.1rem}
+#drawer{position:fixed;inset:0 0 0 auto;width:min(440px,100%);background:var(--card);z-index:10;transform:translateX(100%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:-10px 0 40px #0004}
+#drawer.open{transform:none}
+#veil{position:fixed;inset:0;background:#0008;z-index:9;display:none}#veil.open{display:block}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:1.2rem 1.4rem;border-bottom:1px solid var(--line);font-weight:800;font-size:1.3rem}
+.dh button{background:none;border:0;color:var(--ink);font-size:1.6rem}
+#lines{flex:1;overflow:auto;padding:0 1.4rem}
+.line{display:grid;grid-template-columns:64px 1fr auto;gap:.8rem;align-items:center;padding:1rem 0;border-bottom:1px solid var(--line)}
+.line img,.line .ph{width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--line)}
+.qty{display:flex;align-items:center;gap:.5rem;margin-top:.3rem}
+.qty button{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:none;color:var(--ink)}
+.foot{padding:1.2rem 1.4rem;border-top:1px solid var(--line)}
+.tot{display:flex;justify-content:space-between;font-weight:800;font-size:1.3rem;margin-bottom:.4rem}
+.foot small{color:var(--mut);display:block;margin-bottom:.9rem}
+.foot .add{width:100%;padding:1rem}
+footer{padding:1.5rem clamp(1rem,4vw,3rem);border-top:1px solid var(--line);color:var(--mut);font-size:.9rem}
+</style></head><body>
+<header><span class="brand" id="name"></span><button class="cartbtn" id="open" aria-label="Koszyk">Koszyk<b id="cnt">0</b></button></header>
+<section class="hero"><h1 id="tag"></h1></section>
+<div class="banner" id="paid" hidden>Dziękujemy! Płatność przyjęta, wkrótce dostaniesz potwierdzenie od Stripe.</div>
+<main><div class="grid" id="grid"></div><p class="empty" id="empty" hidden>Wkrótce pojawią się tu pierwsze produkty.</p></main>
+<footer>© <span id="y"></span> <span id="fn"></span></footer>
+<div id="veil"></div>
+<aside id="drawer" aria-label="Koszyk"><div class="dh">Twój koszyk<button id="close" aria-label="Zamknij">×</button></div>
+<div id="lines"></div>
+<div class="foot"><div class="tot"><span>Razem</span><span id="sum"></span></div><small>Adres dostawy i dane podasz w następnym kroku.</small><button class="add" id="pay">Przejdź do płatności</button></div></aside>
+<script>
+const $=s=>document.getElementById(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt=n=>new Intl.NumberFormat("pl-PL",{style:"currency",currency:"PLN"}).format(n);
+let P=[],cart={};try{cart=JSON.parse(localStorage.cart||"{}")}catch{}
+const save=()=>{localStorage.cart=JSON.stringify(cart);draw()};
+function draw(){
+  const rows=Object.entries(cart).map(([id,q])=>[P.find(p=>p.id===id),q]).filter(([p])=>p&&!p.soldOut);
+  $("cnt").textContent=rows.reduce((a,[,q])=>a+q,0);
+  $("sum").textContent=fmt(rows.reduce((a,[p,q])=>a+p.price*q,0));
+  $("lines").innerHTML=rows.length?rows.map(([p,q])=>`<div class="line">${p.image?`<img src="${esc(p.image)}" alt="">`:'<div class="ph"></div>'}<div><b>${esc(p.name)}</b><div class="qty"><button data-d="-1" data-id="${p.id}" aria-label="Mniej">−</button>${q}<button data-d="1" data-id="${p.id}" aria-label="Więcej">+</button></div></div><b>${fmt(p.price*q)}</b></div>`).join(""):'<p class="empty" style="padding-top:1rem">Koszyk jest pusty.</p>';
+  $("pay").disabled=!rows.length;
+}
+$("lines").onclick=e=>{const b=e.target.closest("button[data-id]");if(!b)return;const id=b.dataset.id;cart[id]=Math.min(20,(cart[id]||0)+ +b.dataset.d);if(cart[id]<=0)delete cart[id];save()};
+$("grid").onclick=e=>{const b=e.target.closest("button[data-add]");if(!b)return;cart[b.dataset.add]=Math.min(20,(cart[b.dataset.add]||0)+1);save();toggle(true)};
+const toggle=o=>{$("drawer").classList.toggle("open",o);$("veil").classList.toggle("open",o)};
+$("open").onclick=()=>toggle(true);$("close").onclick=$("veil").onclick=()=>toggle(false);
+$("pay").onclick=async()=>{
+  $("pay").disabled=true;$("pay").textContent="Przekierowuję…";
+  const r=await fetch("/api/checkout",{method:"POST",body:JSON.stringify({items:Object.entries(cart).map(([id,qty])=>({id,qty}))})});
+  if(r.ok){location=(await r.json()).url}else{alert("Nie udało się rozpocząć płatności: "+await r.text());$("pay").disabled=false;$("pay").textContent="Przejdź do płatności"}
+};
+if(new URLSearchParams(location.search).has("paid")){cart={};localStorage.cart="{}";$("paid").hidden=false;history.replaceState({},"","/")}
+$("y").textContent=new Date().getFullYear();
+fetch("/api/products").then(r=>r.json()).then(d=>{
+  P=d.products;document.title=d.name;$("name").textContent=$("fn").textContent=d.name;$("tag").textContent=d.tagline;
+  $("empty").hidden=P.length>0;
+  $("grid").innerHTML=P.map(p=>`<article class="card"><div class="pic">${p.image?`<img src="${esc(p.image)}" alt="${esc(p.name)}" loading="lazy">`:`<i>${esc(p.name.charAt(0))}</i>`}${p.soldOut?'<span class="tag">Wyprzedane</span>':""}</div><div class="meta"><span>${esc(p.name)}</span><span>${fmt(p.price)}</span></div><p class="desc">${esc(p.description)}</p><button class="add" data-add="${p.id}" ${p.soldOut?"disabled":""}>${p.soldOut?"Niedostępne":"Dodaj do koszyka"}</button></article>`).join("");
+  draw();
+});
+draw();
+</script></body></html>
